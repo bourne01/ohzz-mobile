@@ -43,7 +43,7 @@ export default {
             this.actIndex = index;
             /* switch(index){
                 case 0:
-                    this.$router.push("/home");//<a href=""></a>
+                    this.$router.push("/home");//<a href=""></a>+6666666
                     break;
                 case 1:
                     this.$router.push("/my-errors");

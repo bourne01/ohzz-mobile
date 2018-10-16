@@ -106,7 +106,7 @@ export default new VueRouter({
 	{
 		path:'/student-election',
 		name:'StudentElection',
-		component:() => import('../components/student/election-course/election-course.vue.vue')
+		component:() => import('../components/student/election-course/election-course.vue')
 	},
   ]
 })

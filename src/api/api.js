@@ -1,6 +1,6 @@
 import http from 'axios'
 
-let baseUrl = '..'
+let baseUrl = 'creditBank'
 
 
 /**********************************************************************************
@@ -186,6 +186,14 @@ export const getStudentReportCard = (params) => {
 
   export const getCourses = (params) => {
       return http(`${baseUrl}/stuCourse!getStuSelCourse.action`,{params})
+  }
+  
+ /********************************************************************************
+  * 获取学生已选的课程
+  ********************************************************************************/
+
+  export const getStudentCourses = (params) => {
+      return http(`${baseUrl}/stuCourse!query2.action`,{params})
   }
 
   /******************************************************************************

@@ -2,7 +2,7 @@
     <div class="background-color">
         <my-header class="header">
             <span class="left" slot="left">
-                <img :src="require('../assets/home/back.png')" alt="">
+                <img :src="require('../../../assets/election-course/back.png')" alt="">
             </span>
             <span slot="center" class="home-course-tab">
                 <!-- 课前、课后与学生讨论选项卡区已经有现成的不用再编写 -->
@@ -11,12 +11,12 @@
                     default-color="#616475"
                     active-color="#4B78FF"
                     >
-                    <tab-item  @on-item-click="onTabClick">选课中心</tab-item>
-                    <tab-item selected @on-item-click="onTabClick">我的课程</tab-item>
+                    <tab-item  selected @on-item-click="onTabClick">选课中心</tab-item>
+                    <tab-item @on-item-click="onTabClick">我的课程</tab-item>
                 </tab>
             </span>
             <span class="right" slot="right" >
-                <img :src="require('../assets/home/filter.png')" alt="" @click="onClick">
+                <img :src="require('../../../assets/election-course/filter.png')" alt="" @click="onClick">
             </span>
         </my-header>
         <section>
@@ -29,34 +29,34 @@
                    <img :src="arrImg[idx%3]" alt="" >
                </span>
                <ul class="course-information">
-                        <h3>{{course.claName}}</h3>
+                        <h3>{{course.couName}}</h3>
                         <li class="teacher">任课老师：{{course.thrName}}</li>
                         <li class="classroom">上课教室：{{course.classRoom}}</li>
-                        <li class="starttime">开课时间：未定</li>
+                        <!-- <li class="starttime">开课时间：未定</li> -->
                         <li class="number">人数：{{course.manNumUp}}/<span class="class-number">{{course.manNumCur}}</span></li>
                         <li class="btn" :class="{
                             select:course.state==3,
                             remind:course.state ==2,
                             full:course.state ==1,
-                        }" @click.stop="onBtn">{{stateNames[course.state-1]}}</li>
+                        }" @click.stop="onBtn(course.autoId)">{{stateNames[course.state-1]}}</li>
                </ul>
            </div>
-           <div class="my-courses"  v-if="actIndex == 1" v-for="(course,idx) in courseList" :key="idx">
+           <div class="my-courses"  v-if="actIndex == 1" v-for="(course,idx) in myCourseList" :key="idx">
                 <span>
                    <img :src="arrImg[idx%3]" alt="">
                </span>
                <ul class="course-information">
-                        <h3>创意美术课</h3>
-                        <li class="teacher">任课老师：</li>
+                        <h3>{{course.couName}}</h3>
+                        <li class="teacher">开课学期：{{course.termName}}</li>
                         <li class="classroom">上课教室：</li>
-                        <li class="starttime">开课时间：</li>
-                        <li class="number">人数：</li>
+                        <li class="starttime number">开课时间：{{course.schedInf}}</li>
+                        <!-- <li class="">人数：</li> -->
                         <li class="mycourse-btn" >待审核</li>
                </ul>
            </div>
         </section>
          
-        <coursefilter v-show="filtershow"></coursefilter>  
+        <coursefilter></coursefilter>  
         <nav-bar></nav-bar>
         
     </div>
@@ -64,10 +64,11 @@
 
 <script>
 import { Tab, TabItem, Sticky, Divider, XButton, Swiper, SwiperItem } from 'vux'
-import MyHeader from '../components/base/my-header'
-import NavBar from '../components/base/nav-bar' 
-import { getElectTask, getCourses }  from '../api/api.js'
-import Coursefilter from '../components/base/course-filter' 
+import MyHeader from '../../../components/base/my-header'
+import NavBar from '../../../components/base/nav-bar' 
+import { getElectTask, getStudentCourses, selectCourse, getMyCourses,getCourses }  from '../../../api/api.js'
+import { xhrErrHandler } from '../../../utils/util.js'
+import Coursefilter from './course-filter' 
 export default {
     components: {
         Tab,
@@ -83,65 +84,97 @@ export default {
     },
     data(){
         return{
-            actIndex:1,//默认激活选项卡内容,
+            actIndex:0,//默认激活选项卡内容,
             /* setBarWidth:function(index){
                 return  (index+1)*2 + 'em';
             } */
             arrImg:[
-                require("../assets/home/art.png"),
-                require("../assets/home/art-two.png"),
-                require("../assets/home/art-three.png"),
+                require("../../../assets/election-course/art.png"),
+                require("../../../assets/election-course/art-two.png"),
+                require("../../../assets/election-course/art-three.png"),
             ],
             courseList:[],
             stateNames:['已满额','提醒我','选课'],
             classStateName:['待审核','已报名','退选'],
             filtershow:false,
-            
+            myCourseList:[],
+            studentId:'',//学生Id
+            taskNO:'',//任务编号
         }
     },
     methods:{
         /**@function 监听点击选项卡事件 */
-        onTabClick(idx){
-            console.log(idx);
-            let isOpenCourse = false;
+        onTabClick(idx){            
             this.actIndex = idx;
-            if(idx === 0){
-                isOpenCourse = true;
+            if(idx===1){
+                getStudentCourses({start:0,limit:1000})
+                    .then(res => {
+                        if(res.data.success){
+                            this.myCourseList = res.data.dataList;
+                        }
+                    })
             }
-            this.$root.bus.$emit('open-course',isOpenCourse)
         }, 
          /**@function 跳转进入课程详情 */
         goCourseDetail(){
             this.$router.push('/course-detail');
         },
-        onBtn(){
-            
+
+        /**
+         * @function 选中课程
+         * @param {被选课程的Id} courseId
+         */
+        onBtn(courseId){
+            let params = {
+                stuId:this.studentId,
+                selCouId:courseId,
+            }
+            selectCourse(params)
+                .then(res => {
+                    if(res.data.success){
+                        getCourses({
+                            taskNO:this.taskNO,
+                            stuId:this.stuId,
+                            state:2 
+                            })
+                        this.$msgbox('选课',res.data.message,1500);
+                    }else{
+                        this.$msgbox('选课',res.data.message,10000);
+                    }
+                })
+                .catch(err => {
+                    xhrErrHandler(err,this.$router,this.$msgbox)
+                })
         },
+
         /**@function 监听点击筛选图标，然后发送点击事件 */
         onClick(){
             this.filtershow = true;
         },
     },
 
-      mounted(){
-          
+    mounted(){          
         let params = {
             start:0,
             limit:50,
+            
         };
         getElectTask(params)
             .then(res => {
                 if(res.data.success){
                     let lastesTask = res.data.dataList[res.data.dataList.length-1];
+                    this.studentId = lastesTask.stuId;
+                    this.taskNO = lastesTask.taskNO;
                     let params = {
                             taskNO:lastesTask.taskNO,
-                            stuId:lastesTask.stuId
+                            stuId:lastesTask.stuId,
+                            state:2 
                             }
                         getCourses(params)
-                            .then(res => {
+                            .then(res => {   
                                 console.log(res)
                                 if(res.data.success){
-                                    this.courseList = res.data.dataList;//课程列表对象   
+                                    this.courseList = res.data.dataList;//课程列表对象           
                                     console.log(this.courseList);                                
                                 }
                             })
