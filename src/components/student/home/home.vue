@@ -12,9 +12,9 @@
         <section>
             <human-resource></human-resource>
         </section> -->
-        <footer>
+        <!-- <footer>
             <nav-bar></nav-bar>
-        </footer>
+        </footer> -->
     </div>
 </template>
 

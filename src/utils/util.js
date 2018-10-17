@@ -1,4 +1,10 @@
 
+/**
+ * @function 异步请求出错处理程序
+ * @param {异步请求出错对象} err 
+ * @param {注册在全局上的router对象} router 
+ * @param {注册在Vue.prototype上弹窗方法} msgbox 
+ */
 export const xhrErrHandler = (err,router,msgbox) => {
     console.log(err);
     if(err.response){
@@ -12,4 +18,13 @@ export const xhrErrHandler = (err,router,msgbox) => {
             console.log('网络异常，稍后重试！')
         }
     }
+}
+
+/**
+ * @function 执行回退，一般回退到首页
+ * @param {路由路径} path 
+ * @param {注册在全局上的router对象} router 
+ */
+export const goBack = (path,router) => {
+    router.push(path)
 }

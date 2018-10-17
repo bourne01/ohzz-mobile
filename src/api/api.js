@@ -1,6 +1,6 @@
 import http from 'axios'
 
-let baseUrl = 'creditBank'
+let baseUrl = '..'
 
 
 /**********************************************************************************

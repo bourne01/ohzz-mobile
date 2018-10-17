@@ -1,6 +1,6 @@
 <template>
     <div v-transfer-dom>
-        <popup v-model="isShow" position="right" class="aa">
+        <popup v-model="filterShow" position="right" class="aa">
             <div class="screen-box">
                 <h3>选择学期</h3>
                 <!-- <select v-model="selected" class="spinner">
@@ -22,10 +22,14 @@
                     <selector placeholder="请选择学期" v-model="curTerm" :options="termList"></selector>
                 </group> -->
                 <h3>课程类型</h3>
-                <div class="type-one" v-for="idx in 4" :key="idx">
-                    类型一
+                <div 
+                    class="type-one" 
+                    v-for="(courseType,idx) in courseTypes" :key="idx"
+                    @click="onCourseTypeClick(courseType,idx)"
+                    :class="{activeType:activeTypeIndex==idx}">
+                    {{courseType.name}}
                 </div>
-                <div class="sure" @click="sure">
+                <div class="sure" @click="confirm">
                     确定
                 </div>
             </div>
@@ -36,6 +40,7 @@
 import { getSelector }  from '../../../api/api.js'
 import { TransferDom,Popup,Group,Selector,PopupPicker} from 'vux'
 export default {
+    props:['filter-show'],
     directives:{
         TransferDom,
     },
@@ -50,12 +55,21 @@ export default {
             termList:[],
             isShow:true,
             curTermName:'无限制',
-            termIds:[]
+            termIds:[],
+            activeTypeIndex:-1,
+            courseTypes:[
+                {name:'类型一',value:1},
+                {name:'类型一',value:1},
+                {name:'类型一',value:1},
+                {name:'类型一',value:1},
+            ]
         }
     },
      methods:{
-       sure(){
-           this.hidde= false;
+       confirm(){
+           /* this.filterShow= false; */
+           /* this.$root.bus.$emit('filter-close'); */
+           this.$emit('filter-close')
        },
        /**@function 点击学期列表，获取课程列表 */
         onHide(){
@@ -64,19 +78,27 @@ export default {
              /* this.classTable = [];//初始化课表
             this.getTeacherSchedule(this.me.autoId,this.termIds[0],2); */
         },
+        /**
+         * @function 监听点击课程类型事件，然后选择相应的课程类型
+         * @param {课程类型} courseType
+         * @param {课程类型对应的数组下标} index
+         */
+        onCourseTypeClick(courseType,index){
+            this.activeTypeIndex = index;
+        }
     },
     mounted(){
         let params = {
-                        f:'comboTerm',
-                        addType:1
-                       };
-              getSelector(params)
-                .then(res => {
-                    this.termList = [];
-                    for(let item of res.data){
-                        this.termList.push({value:item[0],name:item[1]})
-                    }
-                    
+                    f:'comboTerm',
+                    addType:1
+                    };
+            getSelector(params)
+            .then(res => {
+                this.termList = [];
+                for(let item of res.data){
+                    this.termList.push({value:item[0],name:item[1]})
+                }
+                
 
             })
 }
@@ -157,7 +179,7 @@ export default {
         padding-left: px2rem(20px);
         margin-top: px2rem(16px);
     }
-    .select{
+    .activeType{
         background-color: #DEE4FE;
         color: #607FFF;
     }

@@ -2,13 +2,13 @@
     <div class="backgroud-color">
          <div class="top">
             <span class="left" @click="goBack">
-                <img :src="require('../assets/home/back.png')" alt="">
+                <img :src="require('../../../assets/election-course/back.png')" alt="">
             </span>
             <h3>课程详情</h3>
          </div>
          <div class="graphic-introduction">
               <div class="picture">
-                <img :src="require('../assets/home/art-big.png')" alt="" class="big-pic">
+                <img :src="require('../../../assets/election-course/art-big.png')" alt="" class="big-pic">
               </div>
               <h3>创意美术课</h3>
               <p>课程简介课程简介课程简介课程简介课程简介课程简介课程简介课程简介课程简介课程简介课程简介</p>
@@ -18,7 +18,7 @@
          <div class="teacher-introduction">
              <h3>教师介绍</h3>
              <span>
-                  <img :src="require('../assets/home/teacher.png')" alt="" class="teacher">
+                  <img :src="require('../../../assets/election-course/teacher.png')" alt="" class="teacher">
              </span>
              <ul>
                  <li><strong>张小莉</strong></li>
@@ -39,7 +39,7 @@ export default {
  methods:{
          /**@function 跳转进入课程详情 */
         goBack(){
-            this.$router.push('/home');
+            this.$router.push('/student-election');
         }
     },
 }

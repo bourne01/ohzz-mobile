@@ -172,7 +172,7 @@ export default {
         let htmlHeight = document.documentElement.clientHeight || document.body.clientHeight;
         let htmlWidth = document.documentElement.clientWidth || document.body.clientWidth;
         let tbodyHeight = htmlHeight - (96*htmlWidth/375) + 'px';       
-        this.objTbody.height = tbodyHeight;
+        this.tbodyObj.height = tbodyHeight;
         }
         
 }

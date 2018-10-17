@@ -2,7 +2,7 @@
     <div class="background-color">
         <my-header class="header">
             <span class="left" slot="left">
-                <img :src="require('../../../assets/election-course/back.png')" alt="">
+                <img :src="require('../../../assets/election-course/back.png')" alt="" @click="goHome">
             </span>
             <span slot="center" class="home-course-tab">
                 <!-- 课前、课后与学生讨论选项卡区已经有现成的不用再编写 -->
@@ -16,15 +16,16 @@
                 </tab>
             </span>
             <span class="right" slot="right" >
-                <img :src="require('../../../assets/election-course/filter.png')" alt="" @click="onClick">
+               <!--  <img :src="require('../../../assets/election-course/filter.png')" alt="" @click="onFilterClick"> -->
             </span>
         </my-header>
         <section>
            <div class="elective-course" 
-           v-for="(course,idx) in courseList" 
-           :key="idx" 
-           v-if="actIndex == 0"
-           @click="goCourseDetail">
+                v-for="(course,idx) in courseList" 
+                :key="idx" 
+                v-if="actIndex == 0 && course.stuSel!=3"
+                @click="goCourseDetail"
+                >    
                <span>
                    <img :src="arrImg[idx%3]" alt="" >
                </span>
@@ -33,31 +34,42 @@
                         <li class="teacher">任课老师：{{course.thrName}}</li>
                         <li class="classroom">上课教室：{{course.classRoom}}</li>
                         <!-- <li class="starttime">开课时间：未定</li> -->
-                        <li class="number">人数：{{course.manNumUp}}/<span class="class-number">{{course.manNumCur}}</span></li>
+                        <li class="number">人数：<span class="class-number">{{course.manNumCur}}</span>/{{course.manNumUp}}</li>
                         <li class="btn" :class="{
-                            select:course.state==3,
-                            remind:course.state ==2,
-                            full:course.state ==1,
-                        }" @click.stop="onBtn(course.autoId)">{{stateNames[course.state-1]}}</li>
+                            select:isTaskEnabled && !isTaskClosed,//可选课时段
+                            remind:!isTaskEnabled && isTaskClosed,//时间未到，任务未开启
+                            }" 
+                            :data-total="course.manNumUp"
+                            :data-current="course.manNumCur"
+                            @click.stop="onBtn(course.autoId)"                            
+                            v-color>{{stateName}}</li>
                </ul>
            </div>
            <div class="my-courses"  v-if="actIndex == 1" v-for="(course,idx) in myCourseList" :key="idx">
                 <span>
                    <img :src="arrImg[idx%3]" alt="">
-               </span>
-               <ul class="course-information">
-                        <h3>{{course.couName}}</h3>
-                        <li class="teacher">开课学期：{{course.termName}}</li>
-                        <li class="classroom">上课教室：</li>
-                        <li class="starttime number">开课时间：{{course.schedInf}}</li>
-                        <!-- <li class="">人数：</li> -->
-                        <li class="mycourse-btn" >待审核</li>
-               </ul>
+                </span>
+                <ul class="course-information">
+                            <h3>{{course.couName}}</h3>
+                            <li class="teacher">开课学期：{{course.termName}}</li>
+                            <li class="classroom">上课教室：</li>
+                            <li class="starttime number">开课时间：{{course.schedInf}}</li>
+                            <!-- <li class="">人数：</li> -->
+                            <li class="mycourse-btn"
+                                :class="{
+                                    remind:course.state==4,
+                                    registered:course.state==3,
+                                    quitElection:course.state ==2,}"
+                                @click.stop="quitElection(course.selCouId,course.stuId,course.state)"
+                                
+                                >{{courseStateName[course.state-2]}}
+                                
+                                </li>
+                </ul>
            </div>
-        </section>
-         
-        <coursefilter></coursefilter>  
-        <nav-bar></nav-bar>
+        </section>         
+        <course-filter :filter-show="filterShow" @filter-close="onFilterClose"></course-filter>  
+        <!-- <nav-bar></nav-bar> -->
         
     </div>
 </template>
@@ -66,9 +78,9 @@
 import { Tab, TabItem, Sticky, Divider, XButton, Swiper, SwiperItem } from 'vux'
 import MyHeader from '../../../components/base/my-header'
 import NavBar from '../../../components/base/nav-bar' 
-import { getElectTask, getStudentCourses, selectCourse, getMyCourses,getCourses }  from '../../../api/api.js'
-import { xhrErrHandler } from '../../../utils/util.js'
-import Coursefilter from './course-filter' 
+import { getElectTask, getStudentCourses, selectCourse, getMyCourses,getCourses,deleteCourse }  from '../../../api/api.js'
+import { xhrErrHandler,goBack } from '../../../utils/util.js'
+import CourseFilter from './course-filter' 
 export default {
     components: {
         Tab,
@@ -80,8 +92,21 @@ export default {
         SwiperItem,      
         MyHeader,
         NavBar, 
-        Coursefilter,
+        CourseFilter,
     },
+    directives:{
+        /**@function 当选课人数已经满员的时候，改变颜色与状态值 */
+        color:{
+            inserted:function(el){                
+                if(el.dataset.total - el.dataset.current<=0){
+                    el.style.backgroundColor = " #FFE9E9";
+                    el.style.color = "#FF3831";
+                    el.innerText = "已满额"
+                }
+            }
+        }
+    },
+
     data(){
         return{
             actIndex:0,//默认激活选项卡内容,
@@ -93,19 +118,24 @@ export default {
                 require("../../../assets/election-course/art-two.png"),
                 require("../../../assets/election-course/art-three.png"),
             ],
-            courseList:[],
-            stateNames:['已满额','提醒我','选课'],
-            classStateName:['待审核','已报名','退选'],
-            filtershow:false,
-            myCourseList:[],
+            courseList:[],//所有课程，包括已经满额
+            stateNames:['已满额','时间未到','选课'],
+            stateName:'',
+            courseStateName:['退选','等待上课'],
+            filterShow:false,
+            myCourseList:[],//我已选的课程列表
             studentId:'',//学生Id
             taskNO:'',//任务编号
+            isTaskEnabled:true,//任务开启
+            isTaskClosed:false,//任务关闭
+            taskList:[],//选课任何列表
         }
     },
     methods:{
         /**@function 监听点击选项卡事件 */
         onTabClick(idx){            
             this.actIndex = idx;
+            this.filterShow = false;
             if(idx===1){
                 getStudentCourses({start:0,limit:1000})
                     .then(res => {
@@ -113,11 +143,27 @@ export default {
                             this.myCourseList = res.data.dataList;
                         }
                     })
+            }else{
+                 getCourses({
+                        taskNO:this.taskNO,
+                        stuId:this.stuId,
+                        state:2 })
+                    .then(res => {   
+                        console.log(res)
+                        if(res.data.success){
+                            this.courseList = res.data.dataList;//课程列表对象           
+                            console.log(this.courseList);                                
+                        }
+                    })
             }
         }, 
+        /**@function 回退到首页 */
+        goHome(){
+            goBack('/student-home',this.$router);
+        },
          /**@function 跳转进入课程详情 */
         goCourseDetail(){
-            this.$router.push('/course-detail');
+           /*  this.$router.push('/student-course-detail'); */
         },
 
         /**
@@ -125,35 +171,88 @@ export default {
          * @param {被选课程的Id} courseId
          */
         onBtn(courseId){
-            let params = {
+            if(this.isTaskEnabled && !this.isTaskClosed){
+                let params = {
                 stuId:this.studentId,
                 selCouId:courseId,
+                }
+                selectCourse(params)
+                    .then(res => {
+                        if(res.data.success){
+                            getCourses({
+                                    taskNO:this.taskNO,
+                                    stuId:this.stuId,
+                                    state:2 
+                                    })
+                                .then(res => {   
+                                    console.log(res)
+                                    if(res.data.success){
+                                        this.courseList = res.data.dataList;//课程列表对象           
+                                        console.log(this.courseList);                                
+                                    }
+                                })
+                            this.$msgbox('选课',res.data.message,1500);
+                        }else{
+                            this.$msgbox('选课',res.data.message,10000);
+                        }
+                    })
+                    .catch(err => {
+                        xhrErrHandler(err,this.$router,this.$msgbox)
+                    })
             }
-            selectCourse(params)
-                .then(res => {
-                    if(res.data.success){
-                        getCourses({
-                            taskNO:this.taskNO,
-                            stuId:this.stuId,
-                            state:2 
-                            })
-                        this.$msgbox('选课',res.data.message,1500);
-                    }else{
-                        this.$msgbox('选课',res.data.message,10000);
-                    }
-                })
-                .catch(err => {
-                    xhrErrHandler(err,this.$router,this.$msgbox)
-                })
+            
         },
+
+        /**
+         * @function 退选课程
+         * @param {被选课程的Id} courseId
+         * @param {学生Id} studentId
+         * @param {课程状态 2可退选，3，已被确认，即不课退选，4，课程已经完成} courseState
+         */
+        quitElection(courseId,studentId,courseState){
+            if(courseState == 2){
+                let params = {
+                stuId:studentId,
+                selCouId:courseId,
+                }
+                deleteCourse(params)
+                    .then(res => {
+                        if(res.data.success){
+                            getStudentCourses({start:0,limit:1000})
+                                .then(res => {
+                                    if(res.data.success){
+                                        this.myCourseList = res.data.dataList;
+                                    }
+                                })
+                            this.$msgbox('选课',res.data.message,1500);
+                        }else{
+                            this.$msgbox('选课',res.data.message,10000);
+                        }
+                    })
+                    .catch(err => {
+                        xhrErrHandler(err,this.$router,this.$msgbox)
+                    })
+            }
+            
+        },
+
 
         /**@function 监听点击筛选图标，然后发送点击事件 */
-        onClick(){
-            this.filtershow = true;
+        onFilterClick(){
+            console.log('...filter show');
+            this.filterShow = true;
         },
+
+        onFilterClose(){
+            console.log('close...');
+            this.filterShow = false;
+        }
     },
 
-    mounted(){          
+    mounted(){    
+        this.$root.bus.$on('filter-close',() =>{
+            this.filterShow = false;
+        })      
         let params = {
             start:0,
             limit:50,
@@ -161,8 +260,25 @@ export default {
         };
         getElectTask(params)
             .then(res => {
-                if(res.data.success){
-                    let lastesTask = res.data.dataList[res.data.dataList.length-1];
+                if(res.data.success){                    
+                    this.taskList = res.data.dataList;//当前学生所有的任务列表
+                    let lastesTask = res.data.dataList[res.data.dataList.length-1];//默认展示最近的选课任务
+                    let curDateTime = new Date();
+                    if(curDateTime < new Date(lastesTask.startTime)){//当前时间小于任务开启时间
+                        this.isTaskEnabled = false;
+                        this.isTaskClosed = true;
+                        this.stateName = '时间未到'
+                    }else if(curDateTime > new Date(lastesTask.endTime)){//当前时间大于任务关闭时间
+                        this.isTaskClosed = true;
+                        this.isTaskEnabled = false;
+                        this.stateName = '时间已过'
+                    }else{
+                        this.isTaskEnabled = true;
+                        this.isTaskClosed = false;
+                        this.stateName = '选课'
+                    }
+                    console.log('.................................');
+                    console.log(this.isTaskClosed,this.isTaskEnabled);
                     this.studentId = lastesTask.stuId;
                     this.taskNO = lastesTask.taskNO;
                     let params = {
@@ -254,7 +370,7 @@ export default {
         color: #FF3831;
     }
     .vux-tab{
-        height:px2rem(88px);
+        height:px2rem(100px);
     }
     .home-course-tab{
         width:px2rem(350px);
@@ -263,11 +379,14 @@ export default {
         font-size:px2rem(32px)!important;
         font-weight: bold;
         background:none!important;
-        line-height:px2rem(88px)!important;
+        line-height:px2rem(100px)!important;
     }
     .left{
         margin-left:px2rem(32px)
         }
+    .left img{
+        margin-left:px2rem(-20px);
+    }
     .right{
         text-align: right;
         margin-right:px2rem(30px)
@@ -278,9 +397,9 @@ export default {
     .take-lessons{
         color: #DF5D5D;
     }
-    .audited{
-        background-color: #DEE4FE;
-        color: #607FFF;
+    .quitElection{
+        background-color: #FFE9E9;
+        color: #FF3831;
     }
     .registered{
         background-color: #5DC87D;

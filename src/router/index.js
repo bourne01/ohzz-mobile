@@ -108,5 +108,10 @@ export default new VueRouter({
 		name:'StudentElection',
 		component:() => import('../components/student/election-course/election-course.vue')
 	},
+	{
+		path:'/student-course-detail',
+		name:'StudentCourseDetail',
+		component:() => import('../components/student/election-course/course-detail.vue')
+	},
   ]
 })
