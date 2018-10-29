@@ -1,7 +1,7 @@
 <template>
   <div>
         <my-header class="header">
-            <div class="left" slot="left" @click="goBack">
+            <div class="left" slot="left" @click="goHome">
                 <img :src="require('../../../assets/backward.png')" alt="">
             </div>
             <div class="center" slot="center">               
@@ -66,6 +66,7 @@
 import MyHeader from '../../../components/base/my-header'
 import { PopupPicker } from 'vux'
 import { getSelector,getStudentScore } from '../../../api/api.js'
+import { goBack } from '../../../utils/util.js'
 export default {
     components:{
         MyHeader,
@@ -85,8 +86,9 @@ export default {
     },
     methods:{         
         /**@function 返回上一个页面 */
-        goBack(){
-            history.go(-1);
+        /**@function 回退到首页 */
+        goHome(){
+            goBack('/student-home',this.$router);
         },
         /**@function 获取学期列表 
         */
@@ -167,8 +169,6 @@ export default {
         this.getTermList();        
     },
     mounted(){
-        let selector = document.querySelector('.vux-popup-picker-select');
-        selector.style.textAlign = 'center';
         let htmlHeight = document.documentElement.clientHeight || document.body.clientHeight;
         let htmlWidth = document.documentElement.clientWidth || document.body.clientWidth;
         let tbodyHeight = htmlHeight - (96*htmlWidth/375) + 'px';       
@@ -177,6 +177,12 @@ export default {
         
 }
 </script>
+
+<style>
+    .center .vux-popup-picker-select{
+        text-align: center!important;
+    }
+</style>
 
 <style lang="scss" scoped>
     @function px2rem($px){

@@ -1,72 +1,88 @@
 <template>
     <div>
         <div class="class-info-wrap">
-        <div class="class-info-txt">
-            当前课堂信息:
+            <div class="class-info-txt">
+                当前课堂信息:
+            </div>
+            <div class="class-info">
+                <span>第{{teachDate.week}}周</span>
+                <span>|</span>
+                <span>星期{{teachDate.weekday}}</span>
+                <span>|</span>
+                <span>第{{classInfo.section}}节</span>
+                <span>|</span>
+                <span>{{classInfo.classroom}}</span>
+                <span>|</span>
+                <span>{{classInfo.courseName}}</span>
+            </div>
+            <div class="statics">
+                <span>班级总人数：<span style="color:#3dc894;">{{stuList.length}}</span></span>&nbsp;&nbsp;
+                <span>已请假人数：<span style="color:#f91b1b;">{{leavedStus.length}}</span></span>
+            </div>
+            <div class="btn-wrap">
+                <button class="no-absence" @click="isShow=true">全勤</button>
+                <button class="return" @click="goBack">确认返回</button>
+            </div>
         </div>
-        <div class="class-info">
-            <span>第{{teachDate.week}}周</span>
-            <span>|</span>
-            <span>星期{{teachDate.weekday}}</span>
-            <span>|</span>
-            <span>第{{classInfo.section}}节</span>
-            <span>|</span>
-            <span>{{classInfo.classroom}}</span>
-            <span>|</span>
-            <span>{{classInfo.courseName}}</span>
+        <div>
+            <div class="stu-list-txt">学生列表</div>
+            <ul class="stu-list" :style="{height:ulHeight}">
+                <li v-for="(stu,index) in stuList" :key="index">
+                    <div class="stu">
+                        <img :src="require('../../assets/stu-avatar.gif')" alt="">
+                        <div class="stu-txt">
+                            <span class="stu-name">{{stu.name}}</span>
+                            <span class="leave-status">{{stu.leaveStatus?'已请假':'未请假'}}</span>
+                        </div>
+                    </div>
+                    <div class="attendance">
+                        <div class="normal circle" 
+                            :class="{normalActive:stu.attType==1}"
+                            @click="activateStyle(index,1)">
+                            正常
+                        </div>
+                        <div class="late circle" 
+                            :class="{lateActive:stu.attType==2}"
+                            @click="activateStyle(index,2)">
+                            迟到
+                        </div>
+                        <div class="early-leave circle" 
+                            :class="{earlyLeaveActive:stu.attType==3}"
+                            @click="activateStyle(index,3)">
+                            早退
+                        </div>
+                        <div class="skip-class circle" 
+                            :class="{skipClassActive:stu.attType==4}"
+                            @click="activateStyle(index,4)">
+                            旷课
+                        </div>
+                    </div>
+                </li>
+            </ul>
         </div>
-        <div class="statics">
-            <span>班级总人数：<span style="color:#3dc894;">{{stuList.length}}</span></span>&nbsp;&nbsp;
-            <span>已请假人数：<span style="color:#f91b1b;">{{leavedStus.length}}</span></span>
+        <div v-transfer-dom>
+            <confirm v-model="isShow"
+                title="全勤确认"
+                @on-confirm="onConfirm"
+                >
+                <p style="text-align:center;">确定全勤吗？</p>
+            </confirm>
         </div>
-        <div class="btn-wrap">
-            <button class="no-absence" @click="fullyAttend">全勤</button>
-            <button class="return" @click="goBack">确认返回</button>
-        </div>
-    </div>
-    <div>
-        <div class="stu-list-txt">学生列表</div>
-        <ul class="stu-list" :style="{height:ulHeight}">
-            <li v-for="(stu,index) in stuList" :key="index">
-                <div class="stu">
-                    <img :src="require('../../assets/stu-avatar.gif')" alt="">
-                    <div class="stu-txt">
-                        <span class="stu-name">{{stu.name}}</span>
-                        <span class="leave-status">{{stu.leaveStatus?'已请假':'未请假'}}</span>
-                    </div>
-                </div>
-                <div class="attendance">
-                    <div class="normal circle" 
-                        :class="{normalActive:stu.attType==1}"
-                        @click="activateStyle(index,1)">
-                        正常
-                    </div>
-                    <div class="late circle" 
-                        :class="{lateActive:stu.attType==2}"
-                        @click="activateStyle(index,2)">
-                        迟到
-                    </div>
-                    <div class="early-leave circle" 
-                        :class="{earlyLeaveActive:stu.attType==3}"
-                        @click="activateStyle(index,3)">
-                        早退
-                    </div>
-                    <div class="skip-class circle" 
-                        :class="{skipClassActive:stu.attType==4}"
-                        @click="activateStyle(index,4)">
-                        旷课
-                    </div>
-                </div>
-            </li>
-        </ul>
-    </div>
     </div>
     
 </template>
 
 <script>
-import { getCurrentWeek, getLeavedStudents, getAttendanceInfo, getClassStudents, setAllAttend, updateAttendanceInfo } from '../../api/api';
+import { getCurrentWeek, getLeavedStudents, getAttendanceInfo,
+        getClassStudents, setAllAttend, updateAttendanceInfo } from '../../api/api';
+import { Confirm,TransferDomDirective as TransferDom  } from 'vux'
 export default {
+    directives:{
+        TransferDom
+    },
+    components:{
+        Confirm,
+    },
     props:['class-info'],
     data(){
         return{
@@ -77,6 +93,7 @@ export default {
             ulHeight:'',
             teachDate:{},
             stuList:[],//班级学生列表
+            isShow:false
         }
     },
     methods:{
@@ -246,9 +263,9 @@ export default {
                     this.reqErrorHandler(err);
                 })
         },
-        /**@function 监听全勤按钮事件，提交全勤操作 
+        /**@function 监听确认全勤按钮事件，提交全勤操作 
         */
-        fullyAttend(){
+        onConfirm(){
             let params = {
                         "termId":		this.classInfo.termId,
                         "classId":		this.classInfo.classId,

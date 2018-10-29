@@ -23,7 +23,7 @@
             :key="index" 
             class="course-item"
             @click="goRecordScore(index)">
-              <course :course="course"></course>
+              <course :course="course" :index="index"></course>
           </li>
       </ul>
        
@@ -212,9 +212,10 @@ export default {
         border-bottom:1px solid #f7f8fb!important;
     }
     .course-item{
-        padding:px2rem(40px) px2rem(30px) 0 px2rem(40px);
-        height:px2rem(108px);
+        padding:px2rem(48px) px2rem(30px) px2rem(48px) px2rem(32px);
+        height:px2rem(256px);
         border-bottom:1px solid #f7f8fb;
+        box-sizing: border-box;
     }
     .center{
         position: relative;

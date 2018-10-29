@@ -114,6 +114,7 @@ export default {
             }
         })
     },
+   
     mounted(){
         this.curTeacher = this.$route.params.username;        
     }
