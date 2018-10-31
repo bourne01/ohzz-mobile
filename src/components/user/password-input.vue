@@ -14,7 +14,7 @@ export default {
         return{
             placeHolder:'密码',
             isShow:true,
-            password:''
+            password:localStorage.getItem('password')
         }
     },
     methods:{

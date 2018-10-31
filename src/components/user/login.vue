@@ -15,6 +15,12 @@
             </div>
             <username-input @username="getUsername"></username-input>
             <password-input @password="getPassword"></password-input>
+            <div class="remember-me">
+                <span @click="rememberMe=!rememberMe">
+                    <span v-if="!rememberMe" class="checkbox-wrapper">
+                        <input type="checkbox" v-model="rememberMe" ></span>
+                    <img src="../../assets/login/checked.png" alt="" v-else>记住密码
+                </span></div>
             <submit-button @submit="submit">登录</submit-button>
       </div>      
   </div>
@@ -48,6 +54,7 @@ export default {
             password:'',
             userType:1,//1为教师，0为学生
             list: [{key: 'gd', value: '广东'}, {key: 'gx', value: '广西'}],
+            rememberMe:false
         }
     },
     methods:{
@@ -76,6 +83,13 @@ export default {
         },
         /**@function 向服务器提交用户名和密码进行登录验证 */
         submit(){
+            if(this.rememberMe){
+                localStorage.setItem('username',this.username);
+                localStorage.setItem('password',this.password);
+            }else{
+                localStorage.removeItem('username');
+                localStorage.removeItem('password');
+            }
             /* this.$http.defaults.withCredentials=true;
             this.$http.defaults.headers.post['Content-Type'] = 'application/x-www-form-urlencoded';
             let url = 'creditBank/login/login!login.action'; */
@@ -115,7 +129,8 @@ export default {
         }
     },
     created(){
-
+        if(localStorage.getItem('username') && localStorage.getItem('password'))
+            this.rememberMe = true;
     }
 }
 </script>
@@ -156,8 +171,34 @@ export default {
     .password-input{
         margin-top:px2rem(50px);
     }
+    .remember-me{
+        margin-top:px2rem(20px);
+        text-align:center;
+        font-size:px2rem(26px);
+        color:#1A1A1F;
+        height:px2rem(50px);
+        /* line-height:px2rem(40px); */
+    }
+    .remember-me input{
+        position: relative;
+        top:2px;
+        /* margin-right:px2rem(10px); */
+    }
+    .remember-me img{
+        width:px2rem(40px);
+        height:px2rem(40px);
+        position: relative;
+        top:-2px;
+        vertical-align:middle;
+    }
+    .checkbox-wrapper{
+        display:inline-block;
+        box-sizing:border-box;
+        width:px2rem(40px);
+        height:px2rem(40px);
+    }
     .submit-button{
-        margin-top:px2rem(160px);
+        margin-top:px2rem(110px);
     }
     .register-button{
         margin-top:px2rem(100px);
